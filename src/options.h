@@ -72,6 +72,8 @@ struct TAction {
 
 	std::vector<TOptimize_Parameter> parameters_to_optimize;
 	std::vector<TVariable> variables;
+	// key=value;key=value for the selected solver, empty when none was given
+	std::wstring solver_options;
 
 	// filenames of hints to be loaded; may include wildcard
 	std::vector<std::wstring> hints_to_load;

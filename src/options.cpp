@@ -55,7 +55,8 @@ enum class NOption_Index : TOption_Index {
 	population_size,
 	save_config,
 	hint,
-	parameters_hint
+	parameters_hint,
+	solver_option
 };
 
 using TOption_Type = std::remove_cv<decltype(option::Descriptor::type)>::type;
@@ -146,6 +147,15 @@ constexpr option::Descriptor actVariable = {
 	"--variable=, -v=name:=value sets internal variables to possibly complement operating-system variables"
 };
 
+constexpr option::Descriptor actSolver_Option = {
+	static_cast<TOption_Index>(NOption_Index::solver_option),
+	static_cast<TOption_Type>(NAction_Type::unused),
+	"",
+	"solver_option",
+	option::Arg::Optional,
+	"--solver_option=key:=value passes an option to the selected solver, can be repeated"
+};
+
 constexpr option::Descriptor actHint = {
 	static_cast<TOption_Index>(NOption_Index::hint),
 	static_cast<TOption_Type>(NAction_Type::unused),
@@ -173,7 +183,7 @@ constexpr option::Descriptor Zero_Terminating_Option = {
 	nullptr
 };
 
-constexpr std::array<option::Descriptor, 12> option_syntax{
+constexpr std::array<option::Descriptor, 13> option_syntax{
 	Unknown_Option,
 	actExecute,
 	actOptimize,
@@ -185,6 +195,7 @@ constexpr std::array<option::Descriptor, 12> option_syntax{
 	actVariable,
 	actHint,
 	actParameter_Hint,
+	actSolver_Option,
 	Zero_Terminating_Option
 };
 
@@ -363,6 +374,22 @@ TAction Resolve_Parameters(TAction &known_config, std::vector<option::Option>& o
 				result.action = NAction::failed_configuration;
 				return result;
 			}
+		}
+
+		//2.5b gather options the selected solver reads itself, joined as key=value;key=value
+		for (const auto& option_str : Gather_Values(NOption_Index::solver_option, options)) {
+			const auto delim_pos = option_str.find(L":=");
+			if (delim_pos == std::wstring::npos || delim_pos == 0 || delim_pos + 2 == option_str.size()
+				|| option_str.find(L';') != std::wstring::npos) {
+				std::wcerr << L"Malformed solver option: " << option_str << std::endl;
+				result.action = NAction::failed_configuration;
+				return result;
+			}
+
+			if (!result.solver_options.empty()) {
+				result.solver_options += L';';
+			}
+			result.solver_options += option_str.substr(0, delim_pos) + L'=' + option_str.substr(delim_pos + 2);
 		}
 
 		//2.6 gather hints for the optimization

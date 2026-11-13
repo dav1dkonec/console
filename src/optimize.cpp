@@ -98,7 +98,8 @@ int Optimize_Configuration(scgms::SPersistent_Filter_Chain_Configuration configu
 			nullptr,
 			action.solver_id, action.population_size, action.generation_count,
 			hints_ptr.data(), hints_ptr.size(),
-			progress, errors);
+			progress, errors,
+			action.solver_options.empty() ? nullptr : action.solver_options.c_str());
 
 		optimizing_flag = false;
 	});
